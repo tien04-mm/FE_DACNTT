@@ -9,7 +9,6 @@ import { useAuth } from '../../context/AuthContext'; // [CHECK QUYỀN]
 import {
     getCoursesUseCase,
     createCourseUseCase,
-    // updateCourseUseCase, // Tạm thời bỏ import vì chưa dùng được
     deleteCourseUseCase,
     registerStudentUseCase,
     getSemestersUseCase,
@@ -276,12 +275,7 @@ const CourseManagement = () => {
                 return `${dayLabels[record.dayOfWeek] || record.dayOfWeek} ${record.startTime}-${record.endTime}`;
             }
         },
-        // [FIX LỖI] Ẩn cột Sĩ số (SV) vì Backend chưa trả về dữ liệu đúng
-        // {
-        //     title: 'SV',
-        //     key: 'students',
-        //     render: (_, record) => `${record.currentStudents || 0}/${record.maxStudents || 0}`
-        // },
+        
         {
             title: 'Thao tác',
             key: 'actions',
