@@ -11,12 +11,13 @@ const userRepositoryImpl = {
         return response;
     },
 
+    // [FIX] Truyền đầy đủ tham số xuống Backend
     async getUsers(params = {}) {
         const response = await axiosClient.get(API_ENDPOINTS.USERS.LIST, {
             params: {
                 page: params.page || 0,
                 size: params.size || 10,
-                role: params.role,
+                role: params.role, // Truyền role để backend lọc (nếu có hỗ trợ)
             },
         });
         return response;
@@ -46,10 +47,6 @@ const userRepositoryImpl = {
         return response;
     },
 
-    /**
-     * [FIX LỖI 5] Get current user info
-     * @returns {Promise<Object>}
-     */
     async getMe() {
         const response = await axiosClient.get(API_ENDPOINTS.USERS.GET_ME);
         return response;

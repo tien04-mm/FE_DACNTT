@@ -11,7 +11,7 @@ export const createUserUseCase = async (userData) => {
         }
     }
 
-    // [FIX]: Thêm 'SECRETARY' vào danh sách role hợp lệ
+    // Danh sách role hợp lệ (bao gồm Secretary)
     const validRoles = ['ADMIN', 'LECTURER', 'STUDENT', 'SECRETARY'];
     
     if (!validRoles.includes(userData.role)) {
@@ -30,12 +30,33 @@ export const createUserUseCase = async (userData) => {
     return User.fromApi(response);
 };
 
+// [FIX TRIỆT ĐỂ] Logic lọc thông minh tại Frontend
 export const getUsersUseCase = async (params = {}) => {
+    // 1. Gọi API (truyền params xuống repo)
     const response = await userRepository.getUsers(params);
     const content = response.content || response.data || response;
-    const users = Array.isArray(content)
+    
+    // 2. Chuyển đổi dữ liệu
+    let users = Array.isArray(content)
         ? content.map(u => User.fromApi(u))
         : [];
+
+    // 3. Lọc dữ liệu (Client-side Filtering)
+    // Đoạn này khắc phục việc BE trả về thừa hoặc định dạng role khác nhau
+    if (params.role) {
+        const targetRole = params.role.toString().toUpperCase(); // Ví dụ: "LECTURER"
+        
+        users = users.filter(u => {
+            const currentRole = (u.role || '').toString().toUpperCase();
+            
+            // Chấp nhận cả 2 trường hợp:
+            // 1. Khớp chính xác: "ROLE_LECTURER" === "ROLE_LECTURER"
+            // 2. Khớp chứa chuỗi: "ROLE_LECTURER" chứa "LECTURER"
+            return currentRole === targetRole || 
+                   currentRole === `ROLE_${targetRole}` ||
+                   currentRole.includes(targetRole);
+        });
+    }
 
     return {
         users,
@@ -46,47 +67,29 @@ export const getUsersUseCase = async (params = {}) => {
 };
 
 export const getUserByIdUseCase = async (userId) => {
-    if (!userId) {
-        throw new Error('ID người dùng không được để trống');
-    }
-
+    if (!userId) throw new Error('ID người dùng không được để trống');
     const response = await userRepository.getUserById(userId);
     return User.fromApi(response);
 };
 
 export const updateUserUseCase = async (userId, userData) => {
-    if (!userId) {
-        throw new Error('ID người dùng không được để trống');
-    }
-
+    if (!userId) throw new Error('ID người dùng không được để trống');
     const response = await userRepository.updateUser(userId, userData);
     return User.fromApi(response);
 };
 
 export const deleteUserUseCase = async (userId) => {
-    if (!userId) {
-        throw new Error('ID người dùng không được để trống');
-    }
-
+    if (!userId) throw new Error('ID người dùng không được để trống');
     await userRepository.deleteUser(userId);
 };
 
 export const resetPasswordUseCase = async (username) => {
-    if (!username) {
-        throw new Error('Tên đăng nhập không được để trống');
-    }
-
+    if (!username) throw new Error('Tên đăng nhập không được để trống');
     const response = await userRepository.resetPassword(username);
     return response;
 };
 
-/**
- * Get Current User Info Use Case
- * Calls /me endpoint to get fresh user data
- * @returns {Promise<User>}
- */
 export const getMeUseCase = async () => {
-    // Gọi xuống Repository để lấy dữ liệu từ API /me
     const response = await userRepository.getMe();
     return User.fromApi(response);
 };

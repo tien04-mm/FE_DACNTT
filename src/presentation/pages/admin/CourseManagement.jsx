@@ -5,7 +5,7 @@ import { Alert } from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Select from '../../components/common/Select';
-import { useAuth } from '../../context/AuthContext'; // [CHECK QUYỀN]
+import { useAuth } from '../../context/AuthContext'; 
 import {
     getCoursesUseCase,
     createCourseUseCase,
@@ -13,7 +13,7 @@ import {
     registerStudentUseCase,
     getSemestersUseCase,
     getSubjectsUseCase,
-    exportExcelUseCase // [NEW] Import hàm xuất Excel
+    exportExcelUseCase 
 } from '../../../usecases/courses/courseUseCases';
 import { getUsersUseCase } from '../../../usecases/users/userUseCases';
 
@@ -35,8 +35,6 @@ const CourseManagement = () => {
 
     // Form state
     const [showCreateModal, setShowCreateModal] = useState(false);
-    // const [isEditMode, setIsEditMode] = useState(false); // Tạm bỏ Edit Mode
-    // const [editingCourse, setEditingCourse] = useState(null); // Tạm bỏ Edit State
     const [formData, setFormData] = useState({
         courseCode: '',
         subjectId: '',
@@ -48,6 +46,8 @@ const CourseManagement = () => {
         room: '',
         maxStudents: 50,
     });
+    
+    // Select data state
     const [semesters, setSemesters] = useState([]);
     const [subjects, setSubjects] = useState([]);
     const [lecturers, setLecturers] = useState([]);
@@ -67,7 +67,7 @@ const CourseManagement = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
-    // [NEW] State loading cho nút xuất excel
+    // Export loading state
     const [exportingId, setExportingId] = useState(null);
 
     const dayOptions = [
@@ -85,7 +85,6 @@ const CourseManagement = () => {
         try {
             console.log('=== FETCH COURSES ===');
             const result = await getCoursesUseCase({ page, size: 10 });
-            console.log('Courses Response:', result);
             setCourses(result.courses || []);
             setTotalPages(result.totalPages || 1);
         } catch (err) {
@@ -102,7 +101,9 @@ const CourseManagement = () => {
             const [semesterResult, subjectResult, lecturerResult] = await Promise.all([
                 getSemestersUseCase(),
                 getSubjectsUseCase(),
-                getUsersUseCase({ role: 'LECTURER', size: 100 }),
+                // Gọi API lấy user với role LECTURER
+                // Nhờ UseCase đã fix logic lọc, danh sách trả về sẽ chỉ toàn Giảng viên
+                getUsersUseCase({ role: 'LECTURER', size: 100 }), 
             ]);
             setSemesters(semesterResult || []);
             setSubjects(subjectResult || []);
@@ -132,9 +133,9 @@ const CourseManagement = () => {
         setError('');
 
         try {
-            // 1. Tìm object Giảng viên từ ID đã chọn
+            // Tìm object Giảng viên từ ID đã chọn
             const selectedLecturer = lecturers.find(l => String(l.id) === String(formData.lecturerId));
-
+            
             if (!selectedLecturer) {
                 throw new Error("Vui lòng chọn giảng viên từ danh sách.");
             }
@@ -151,32 +152,33 @@ const CourseManagement = () => {
                 subjectId: formData.subjectId,
                 semesterId: formData.semesterId,
                 lecturerId: formData.lecturerId,
-                lecturerCodes: [lecturerCode],
+                lecturerCodes: [lecturerCode], 
                 dayOfWeek: formData.dayOfWeek,
                 startTime: formData.startTime,
                 endTime: formData.endTime,
-                room: formData.room,
-                maxStudents: formData.maxStudents,
+                room: formData.room, 
+                maxStudents: formData.maxStudents, 
             };
 
             console.log('=== SENDING PAYLOAD ===', dataToSend);
 
             await createCourseUseCase(dataToSend);
-
+            
             setSuccess('Tạo lớp học phần thành công!');
             setShowCreateModal(false);
-
+            
+            // Reset form
             setFormData({
                 courseCode: '', subjectId: '', semesterId: '', lecturerId: '',
                 dayOfWeek: '', startTime: '', endTime: '', room: '', maxStudents: 50,
             });
-
+            
             fetchCourses();
 
         } catch (err) {
             console.error('Create Course Error:', err);
             const serverMessage = err.response?.data?.message || err.message || 'Có lỗi xảy ra khi tạo lớp';
-            setError(serverMessage);
+            setError(serverMessage); 
         } finally {
             setSubmitting(false);
         }
@@ -242,9 +244,9 @@ const CourseManagement = () => {
         }
     };
 
-    // [NEW] Hàm xử lý xuất Excel
+    // Export Excel
     const handleExportExcel = async (course) => {
-        setExportingId(course.id); // Set loading cho dòng đang bấm
+        setExportingId(course.id);
         try {
             await exportExcelUseCase(course.id, course.courseCode);
             setSuccess(`Đã tải báo cáo cho lớp ${course.courseCode}`);
@@ -275,14 +277,13 @@ const CourseManagement = () => {
                 return `${dayLabels[record.dayOfWeek] || record.dayOfWeek} ${record.startTime}-${record.endTime}`;
             }
         },
-        
         {
             title: 'Thao tác',
             key: 'actions',
-            width: '200px', // Tăng chiều rộng để chứa thêm nút
+            width: '200px',
             render: (_, record) => (
                 <div className="flex space-x-2">
-                    {/* 1. Nút Xuất Excel [NEW] */}
+                    {/* 1. Nút Xuất Excel */}
                     <button
                         onClick={() => handleExportExcel(record)}
                         disabled={exportingId === record.id}
@@ -311,7 +312,7 @@ const CourseManagement = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                         </svg>
                     </button>
-
+                    
                     {/* 3. Nút Sửa lớp - Disabled (Backend unimplemented) */}
                     <button
                         className="text-gray-400 cursor-not-allowed"
@@ -366,7 +367,7 @@ const CourseManagement = () => {
                 onPageChange={setPage}
             />
 
-            {/* Create Course Modal Only */}
+            {/* Create Course Modal */}
             <Modal
                 isOpen={showCreateModal}
                 onClose={handleCloseModal}
@@ -400,6 +401,8 @@ const CourseManagement = () => {
                             required
                         />
                     </div>
+                    
+                    {/* Danh sách giảng viên đã được lọc, chỉ hiện Giảng viên */}
                     <Select
                         name="lecturerId"
                         label="Giảng viên"
@@ -408,6 +411,7 @@ const CourseManagement = () => {
                         options={lecturers.map(l => ({ value: l.id, label: `${l.lecturerCode || l.username} - ${l.fullName}` }))}
                         required
                     />
+                    
                     <div className="grid grid-cols-3 gap-4">
                         <Select
                             name="dayOfWeek"
@@ -434,7 +438,7 @@ const CourseManagement = () => {
                             required
                         />
                     </div>
-
+                    
                     <div className="flex justify-end space-x-3 pt-4">
                         <Button variant="secondary" onClick={handleCloseModal}>
                             Hủy
